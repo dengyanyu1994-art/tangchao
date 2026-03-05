@@ -1,13 +1,15 @@
-[使用说明.md](https://github.com/user-attachments/files/25745863/default.md)
-# 唐朝宫廷MVU系统使用说明
+# 唐朝开放世界MVU系统使用说明
 
 ## 一、系统概述
 
-唐朝宫廷MVU系统是一个专为SillyTavern设计的变量管理系统，支持：
+唐朝开放世界MVU系统是一个专为SillyTavern设计的变量管理系统，支持：
 - MVU（Model-View-Update）架构
 - 4阶段剧情系统
 - 角色关系管理
 - 变量自动更新
+- 地理位置系统
+- 历史时代系统
+- 开放世界玩法支持
 
 ## 二、部署方法
 
@@ -16,7 +18,7 @@
 1. 将 `bundle.js` 文件上传到GitHub仓库
 2. 使用jsDelivr CDN链接：
    ```
-   https://testingcf.jsdelivr.net/gh/dengyanyu1994-art/tangchao@main/bundle.js
+   https://testingcf.jsdelivr.net/gh/你的用户名/你的仓库名@main/bundle.js
    ```
 
 ### 方法2：本地部署
@@ -37,6 +39,10 @@ console.log('当前声望:', reputation);
 // 获取当前时代
 const era = TangCourtMVU.system.getVariable('world_era');
 console.log('当前时代:', era);
+
+// 获取主角属性
+const charisma = TangCourtMVU.system.getVariable('protagonist_charisma');
+console.log('主角魅力:', charisma);
 ```
 
 #### 设置变量
@@ -46,12 +52,18 @@ TangCourtMVU.system.setVariable('protagonist_reputation', 50);
 
 // 设置当前时代
 TangCourtMVU.system.setVariable('world_era', '贞观');
+
+// 设置主角身份
+TangCourtMVU.system.setVariable('protagonist_identity', '士族');
 ```
 
 #### 增加变量
 ```javascript
 // 增加声望值
 TangCourtMVU.system.incrementVariable('protagonist_reputation', 10);
+
+// 增加财富
+TangCourtMVU.system.incrementVariable('protagonist_wealth', 500);
 ```
 
 ### 3.2 角色关系管理
@@ -114,7 +126,31 @@ console.log('外貌:', characterInfo.appearance);
 console.log('喜好礼物:', characterInfo.preferences.liked_gifts);
 ```
 
-### 3.5 数据导入导出
+### 3.5 地理信息查询
+
+```javascript
+// 获取长安的详细信息
+const geographyInfo = TangCourtMVU.system.getGeographyInfo('changan');
+console.log('地点名称:', geographyInfo.name);
+console.log('地点类型:', geographyInfo.type);
+console.log('人口:', geographyInfo.population);
+console.log('区域:', geographyInfo.districts);
+console.log('机会:', geographyInfo.opportunities);
+```
+
+### 3.6 时代信息查询
+
+```javascript
+// 获取贞观年间的详细信息
+const eraInfo = TangCourtMVU.system.getEraInfo('zhenguan');
+console.log('时代名称:', eraInfo.name);
+console.log('年份范围:', eraInfo.years);
+console.log('描述:', eraInfo.description);
+console.log('重大事件:', eraInfo.major_events);
+console.log('时代氛围:', eraInfo.atmosphere);
+```
+
+### 3.7 数据导入导出
 
 #### 导出数据
 ```javascript
@@ -162,6 +198,20 @@ TangCourtMVU.system.on('stageTransition', (data) => {
 ```javascript
 TangCourtMVU.system.on('actionPerformed', (data) => {
   console.log(`对角色 ${data.characterId} 执行了动作: ${data.action}`);
+});
+```
+
+### 4.5 时间推进事件
+```javascript
+TangCourtMVU.system.on('timeAdvanced', (data) => {
+  console.log(`时间推进到 ${data.year}年${data.month}月${data.day}日`);
+});
+```
+
+### 4.6 时代变更事件
+```javascript
+TangCourtMVU.system.on('eraChanged', (data) => {
+  console.log(`时代变更为: ${data.era}`);
 });
 ```
 
@@ -233,6 +283,42 @@ TangCourtMVU.system.updateRelationship('princess_changle', {
 });
 ```
 
+### 5.4 地理探索场景
+```javascript
+// 获取长安信息
+const changanInfo = TangCourtMVU.system.getGeographyInfo('changan');
+
+console.log(`欢迎来到${changanInfo.name}！`);
+console.log(`这里是${changanInfo.description}`);
+console.log(`可探索的区域:`);
+for (const [district, desc] of Object.entries(changanInfo.districts)) {
+  console.log(`  - ${district}: ${desc}`);
+}
+console.log(`可参与的活动: ${changanInfo.opportunities.join(', ')}`);
+
+// 更新主角位置
+TangCourtMVU.system.setVariable('world_location_region', '长安');
+TangCourtMVU.system.setVariable('world_location_place', '东市');
+```
+
+### 5.5 时代推进场景
+```javascript
+// 推进时间
+TangCourtMVU.system.advanceTime(30); // 推进30天
+
+// 检查当前时代
+const currentEra = TangCourtMVU.system.getVariable('world_era');
+console.log('当前时代:', currentEra);
+
+// 获取时代详情
+const eraInfo = TangCourtMVU.system.getEraInfo(
+  currentEra === '贞观' ? 'zhenguan' : 
+  currentEra === '开元' ? 'kaiyuan' : 'wude'
+);
+console.log('时代描述:', eraInfo.description);
+console.log('重大事件:', eraInfo.major_events.join(', '));
+```
+
 ## 六、变量参考
 
 ### 6.1 世界变量
@@ -242,56 +328,153 @@ TangCourtMVU.system.updateRelationship('princess_changle', {
 - `world_day`: 当前日期（1-30）
 - `world_season`: 当前季节（春/夏/秋/冬）
 - `world_time_period`: 当前时段（早朝/午时/午后/黄昏/夜晚/深夜）
+- `world_location_region`: 当前区域
+- `world_location_place`: 当前地点
 
-### 6.2 主角变量
+### 6.2 主角基础变量
 - `protagonist_name`: 主角姓名
-- `protagonist_gender`: 主角性别
-- `protagonist_age`: 主角年龄
-- `protagonist_identity`: 主角身份
+- `protagonist_gender`: 主角性别（男/女）
+- `protagonist_age`: 主角年龄（10-100）
+- `protagonist_identity`: 主角身份（皇室/士族/官员/平民/商人/僧道/艺人/游侠/奴婢）
+- `protagonist_profession`: 主角职业（文人/武将/商人/艺人/僧道/游侠）
+
+### 6.3 主角声望变量
 - `protagonist_reputation`: 主角声望值（-100到100）
+- `protagonist_reputation_desc`: 主角声望描述（默默无闻/小有名气/名扬四海/威震天下）
+
+### 6.4 主角政治变量
 - `protagonist_court_influence`: 朝堂影响力（0-100）
 - `protagonist_harem_status`: 后宫地位（0-100）
 - `protagonist_political_power`: 政治权力（0-100）
+
+### 6.5 主角资源变量
 - `protagonist_imperial_favor`: 帝王宠爱（0-100）
 - `protagonist_family_influence`: 家族势力（0-100）
 - `protagonist_wealth`: 财富（0-10000）
 
-### 6.3 角色关系变量
+### 6.6 主角属性变量
+- `protagonist_charisma`: 魅力（0-100）
+- `protagonist_intelligence`: 智慧（0-100）
+- `protagonist_literary_talent`: 文采（0-100）
+- `protagonist_martial_art`: 武艺（0-100）
+- `protagonist_political_skill`: 政治手腕（0-100）
+- `protagonist_commerce`: 商业（0-100）
+
+### 6.7 主角状态变量
+- `protagonist_status`: 主角状态（正常/生病/受伤/怀孕/闭关/流放/监禁）
+- `protagonist_health`: 健康值（0-100）
+- `protagonist_stress`: 压力值（0-100）
+
+### 6.8 主角物品变量
+- `protagonist_items_owned`: 已拥有的物品
+- `protagonist_item_current`: 当前物品
+- `protagonist_gifts_owned`: 已拥有的礼物
+- `protagonist_gift_current`: 当前礼物
+
+### 6.9 主角人际关系变量
+- `protagonist_friends`: 好友列表
+- `protagonist_enemies`: 仇敌列表
+- `protagonist_lovers`: 恋人列表
+- `protagonist_spouse`: 配偶
+
+### 6.10 主角家族变量
+- `protagonist_family`: 家族名称
+- `protagonist_family_position`: 家族地位
+
+### 6.11 剧情进度变量
+- `story_chapter`: 剧情章节
+- `story_main_progress`: 主线进度（0-100）
+- `story_side_progress`: 支线进度（0-100）
+
+### 6.12 剧情任务变量
+- `story_quests_completed`: 已完成任务列表
+- `story_quest_current`: 当前任务
+- `story_events_triggered`: 已触发事件列表
+- `story_event_current`: 当前事件
+
+### 6.13 角色关系变量
 - `affection`: 好感度（0-100）
 - `trust`: 信任度（0-100）
 - `intimacy`: 亲密度（0-100）
 - `relationship_stage`: 关系阶段（1-4）
 - `interaction_count`: 互动次数
 - `last_interaction`: 最后互动时间
-- `relationship_status`: 关系状态
+- `relationship_status`: 关系状态（陌生人/相识/朋友/知己/恋人/夫妻/仇人）
 
 ## 七、角色ID参考
 
 ### 7.1 公主角色
-- `princess_changle`: 长乐公主
+- `princess_changle`: 长乐公主（李丽质）
 - `princess_pingyang`: 平阳昭公主
-- `princess_gaoyang`: 高阳公主
-- `princess_wencheng`: 文成公主
+- `princess_jinyang`: 晋阳公主（李明达）
+- `princess_chengyang`: 城阳公主
+- `princess_xiangcheng`: 襄城公主
 
-### 7.2 后宫角色
+### 7.2 皇后妃嫔
 - `empress_zhangsun`: 长孙皇后
-- `consort_yang`: 杨贵妃
-- `consort_wu`: 武惠妃
-- `consort_xiao`: 萧淑妃
+- `consort_yang`: 杨贵妃（杨玉环）
+- `empress_wu`: 武则天（武曌）
 
-## 八、调试技巧
+### 7.3 帝王角色
+- `emperor_taizong`: 唐太宗（李世民）
+- `emperor_gaozong`: 唐高宗（李治）
+- `emperor_xuanzong`: 唐玄宗（李隆基）
 
-### 8.1 查看所有变量
+### 7.4 名将角色
+- `general_lijing`: 李靖
+- `general_xuerengui`: 薛仁贵
+- `general_guoziyi`: 郭子仪
+
+### 7.5 文人角色
+- `poet_libai`: 李白
+- `poet_dufu`: 杜甫
+
+### 7.6 商人角色
+- `merchant_hu`: 胡商阿里（阿里·本·哈桑）
+
+### 7.7 江湖角色
+- `jianghu_shaolin`: 玄慈大师
+
+## 八、地理ID参考
+
+### 8.1 主要城市
+- `changan`: 长安（首都）
+- `luoyang`: 洛阳（东都）
+- `yangzhou`: 扬州（商业重镇）
+- `chengdu`: 成都（西南重镇）
+
+### 8.2 边疆地区
+- `anxi`: 安西都护府（西域边疆）
+
+## 九、时代ID参考
+
+### 9.1 历史时期
+- `wude`: 武德年间（618-626）
+- `zhenguan`: 贞观年间（627-649）
+- `yonghui`: 永徽年间（650-683）
+- `wuzhou`: 武周时期（684-705）
+- `kaiyuan`: 开元盛世（713-741）
+- `tianbao`: 天宝年间（742-756）
+
+## 十、调试技巧
+
+### 10.1 查看所有变量
 ```javascript
 console.log('所有变量:', TangCourtMVU.system.variables);
 ```
 
-### 8.2 查看所有关系
+### 10.2 查看所有关系
 ```javascript
 console.log('所有关系:', TangCourtMVU.system.relationships);
 ```
 
-### 8.3 重置系统
+### 10.3 查看系统状态
+```javascript
+const status = TangCourtMVU.system.getStatus();
+console.log('系统状态:', status);
+```
+
+### 10.4 重置系统
 ```javascript
 // 重新初始化系统
 TangCourtMVU.system.initializeVariables();
@@ -299,15 +482,17 @@ TangCourtMVU.system.relationships = {};
 console.log('系统已重置');
 ```
 
-## 九、注意事项
+## 十一、注意事项
 
 1. **变量范围**：所有数值变量都有最小值和最大值限制，超出范围会自动调整
 2. **阶段转换**：阶段转换是自动的，当满足条件时会自动触发
 3. **行动限制**：某些行动在特定阶段会被锁定，无法执行
 4. **数据持久化**：建议定期导出数据并保存，避免数据丢失
 5. **性能优化**：大量角色关系可能会影响性能，建议控制在50个以内
+6. **时间推进**：推进时间会自动更新时代和季节，无需手动调整
+7. **地理限制**：不同地点有不同的机会和活动，需根据地理位置选择合适的行动
 
-## 十、常见问题
+## 十二、常见问题
 
 ### Q1: 如何添加新角色？
 A: 在 `CHARACTER_DATABASE` 对象中添加新的角色信息即可。
@@ -321,8 +506,17 @@ A: 使用 `exportVariables()` 导出数据，保存到本地存储或文件。
 ### Q4: 如何恢复游戏进度？
 A: 使用 `importVariables()` 导入之前保存的数据。
 
+### Q5: 如何添加新地点？
+A: 在 `GEOGRAPHY_DATABASE` 对象中添加新的地理信息。
+
+### Q6: 如何添加新时代？
+A: 在 `ERA_DATABASE` 对象中添加新的时代信息。
+
+### Q7: 如何推进时间？
+A: 使用 `advanceTime(days)` 方法，系统会自动更新时代和季节。
+
 ---
 
-**版本**: 2.0.0
+**版本**: 3.0.0
 **更新日期**: 2026-03-05
-**作者**: 唐朝宫廷项目组
+**作者**: 唐朝开放世界项目组
